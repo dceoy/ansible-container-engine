@@ -1,0 +1,21 @@
+---
+- name: Restart Docker
+  become: true
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes
+    enabled: true
+
+- name: Notify updates of Docker via Slack
+  when:
+    - slack_token is defined
+    - slack_channel is defined
+    - slack_icon_url is defined
+  local_action:
+    module: slack
+    msg: 'The Docker server was updated.'
+    token: "{{ slack_token }}"
+    channel: "#{{ slack_channel }}"
+    username: "{{ ansible_user }}@{{ inventory_hostname }}"
+    icon_url: "{{ slack_icon_url }}"

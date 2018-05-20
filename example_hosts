@@ -1,0 +1,10 @@
+[server]
+localhost   ansible_connection=local
+
+[all:vars]
+slack_channel = ansible
+slack_icon_url = https://pbs.twimg.com/profile_images/428287509047435264/ElOjna20.png
+slack_token = XXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZZZ
+http_proxy = http://proxy.example.com:8080
+https_proxy = https://proxy.example.com:8080
+no_proxy = 127.0.0.1,localhost

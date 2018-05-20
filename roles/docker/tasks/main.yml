@@ -1,0 +1,235 @@
+---
+- name: Add Docker repo in Fedora
+  when:
+    - ansible_architecture == 'x86_64'
+    - ansible_distribution == 'Fedora'
+  become: true
+  get_url:
+    url: https://download.docker.com/linux/fedora/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+  notify: Notify updates of Docker via Slack
+
+- name: Add Docker repo in CentOS
+  when:
+    - ansible_architecture == 'x86_64'
+    - ansible_distribution == 'CentOS'
+  become: true
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+  notify: Notify updates of Docker via Slack
+
+- name: Add the GPG key for Docker in Ubuntu
+  when: ansible_distribution == 'Ubuntu'
+  become: true
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    id: 0EBFCD88
+    state: present
+  notify: Notify updates of Docker via Slack
+
+- name: Add Docker repo in Ubuntu
+  when:
+    - ansible_architecture == 'x86_64'
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+  notify: Notify updates of Docker via Slack
+
+- name: Add Docker repo in Ubuntu with arm
+  when:
+    - ansible_architecture in ['armv6l', 'armv7l']
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  apt_repository:
+    repo: "deb [arch=armhf] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+  notify: Notify updates of Docker via Slack
+
+- name: Check installed Docker CE in Fedora
+  when: ansible_distribution == 'Fedora'
+  become: true
+  dnf:
+    name: docker-ce
+    state: present
+  ignore_errors: true
+  register: dnf_docker_ce_installed
+
+- name: Uninstall old versions of Docker in Fedora
+  when:
+    - ansible_distribution == 'Fedora'
+    - dnf_docker_ce_installed is failed
+  become: true
+  dnf:
+    autoremove: yes
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
+    - docker-selinux
+    - docker-engine-selinux
+    - docker-engine
+
+- name: Check installed Docker CE in CentOS
+  when: ansible_distribution == 'CentOS'
+  become: true
+  yum:
+    name: docker-ce
+    state: present
+  ignore_errors: true
+  register: yum_docker_ce_installed
+
+- name: Uninstall old versions of Docker in CentOS
+  when:
+    - ansible_distribution == 'CentOS'
+    - yum_docker_ce_installed is failed
+  become: true
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
+    - docker-selinux
+    - docker-engine-selinux
+    - docker-engine
+
+- name: Check installed Docker CE in Ubuntu
+  when: ansible_distribution == 'Ubuntu'
+  become: true
+  apt:
+    name: docker-ce
+    state: present
+  ignore_errors: true
+  register: apt_docker_ce_installed
+
+- name: Uninstall old versions of Docker in Ubuntu
+  when:
+    - ansible_distribution == 'Ubuntu'
+    - apt_docker_ce_installed is failed
+  become: true
+  apt:
+    autoclean: yes
+    autoremove: yes
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-engine
+    - docker.io
+
+- name: Install Docker CE in Fedota
+  when: ansible_distribution == 'Fedora'
+  become: true
+  dnf:
+    autoremove: yes
+    name: docker-ce
+    enablerepo: docker-ce-stable
+    state: latest
+  notify:
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Install Docker CE in CentOS
+  when: ansible_distribution == 'CentOS'
+  become: true
+  yum:
+    name: docker-ce
+    enablerepo: docker-ce-stable
+    state: latest
+  notify:
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Install Docker CE in Ubuntu
+  when: ansible_distribution == 'Ubuntu'
+  become: true
+  apt:
+    autoclean: yes
+    autoremove: yes
+    update_cache: yes
+    name: docker-ce
+    state: latest
+  notify:
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Put /etc/docker/daemon.json
+  become: true
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+  notify: Notify updates of Docker via Slack
+
+- name: Create docker.service.d/
+  when: use_proxy
+  become: true
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Put /etc/systemd/system/docker.service.d/option.conf
+  when: use_proxy
+  become: true
+  template:
+    src: option.conf.j2
+    dest: /etc/systemd/system/docker.service.d/option.conf
+  notify:
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Start and enable Docker
+  become: true
+  systemd:
+    name: docker
+    state: started
+    daemon_reload: yes
+    enabled: true
+  notify: Notify updates of Docker via Slack
+
+- name: Pull images
+  when:
+    - docker_images is defined
+    - ansible_architecture == 'x86_64'
+  become: true
+  docker_image:
+    name: "{{ item }}"
+  with_items: "{{ docker_images }}"
+  ignore_errors: true
+  notify: Notify updates of Docker via Slack
+
+- name: Add %docker
+  when: docker_users is defined
+  become: true
+  group:
+    name: docker
+    state: present
+  notify: Notify updates of Docker via Slack
+
+- name: Add users to %docker
+  when: docker_users is defined
+  become: true
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  with_items: "{{ docker_users }}"
+  notify: Notify updates of Docker via Slack

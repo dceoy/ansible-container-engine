@@ -1,0 +1,13 @@
+---
+- name: Notify updates of Kubernetes via Slack
+  when:
+    - slack_token is defined
+    - slack_channel is defined
+    - slack_icon_url is defined
+  local_action:
+    module: slack
+    msg: 'The Kubernetes server was updated.'
+    token: "{{ slack_token }}"
+    channel: "#{{ slack_channel }}"
+    username: "{{ ansible_user }}@{{ inventory_hostname }}"
+    icon_url: "{{ slack_icon_url }}"

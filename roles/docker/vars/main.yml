@@ -1,0 +1,14 @@
+---
+docker_images:
+  - ubuntu
+  - debian
+  - centos
+  - fedora
+  - python
+  - dceoy/jupyter
+  - dceoy/nginx-autoindex
+  - dceoy/pydata
+  - dceoy/r-tidyverse
+  - dceoy/rstudio-server
+docker_users:
+  - dceoy

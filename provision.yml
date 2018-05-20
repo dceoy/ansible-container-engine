@@ -1,0 +1,11 @@
+---
+- name: Set up development servers with sudo
+  hosts:
+    - server
+  vars:
+    use_proxy: false
+  roles:
+    - role: docker
+      when: ansible_os_family in ['RedHat', 'Debian']
+    - role: kubernetes
+      when: ansible_os_family in ['RedHat', 'Debian']

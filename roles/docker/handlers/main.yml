@@ -1,12 +1,4 @@
 ---
-- name: Restart Docker
-  become: true
-  systemd:
-    name: docker
-    state: restarted
-    daemon_reload: yes
-    enabled: true
-
 - name: Notify updates of Docker via Slack
   when:
     - slack_token is defined

@@ -3,7 +3,12 @@
   hosts:
     - server
   vars:
-    use_proxy: false
+    ignore_running_containers: true
+    use_proxy: "{{ http_proxy is defined }}"
+  environment:
+    http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
+    https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"
+    no_proxy: "{{ no_proxy if no_proxy is defined else '' }}"
   roles:
     - role: docker
       when: ansible_os_family in ['RedHat', 'Debian']

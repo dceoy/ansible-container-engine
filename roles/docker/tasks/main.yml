@@ -22,6 +22,8 @@
 - name: Add the GPG key for Docker in Ubuntu
   when: ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if use_proxy else '' }}"
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     id: 0EBFCD88
@@ -141,9 +143,7 @@
     name: docker-ce
     enablerepo: docker-ce-stable
     state: latest
-  notify:
-    - Restart Docker
-    - Notify updates of Docker via Slack
+  notify: Notify updates of Docker via Slack
 
 - name: Install Docker CE in CentOS
   when: ansible_distribution == 'CentOS'
@@ -152,9 +152,7 @@
     name: docker-ce
     enablerepo: docker-ce-stable
     state: latest
-  notify:
-    - Restart Docker
-    - Notify updates of Docker via Slack
+  notify: Notify updates of Docker via Slack
 
 - name: Install Docker CE in Ubuntu
   when: ansible_distribution == 'Ubuntu'
@@ -165,9 +163,7 @@
     update_cache: yes
     name: docker-ce
     state: latest
-  notify:
-    - Restart Docker
-    - Notify updates of Docker via Slack
+  notify: Notify updates of Docker via Slack
 
 - name: Put /etc/docker/daemon.json
   become: true
@@ -192,15 +188,20 @@
   template:
     src: option.conf.j2
     dest: /etc/systemd/system/docker.service.d/option.conf
-  notify:
-    - Restart Docker
-    - Notify updates of Docker via Slack
+  notify: Notify updates of Docker via Slack
+
+- name: Check running containers
+  become: true
+  shell: |
+    docker container ls -q | wc -l || echo 0
+  register: running_containers
+  changed_when: false
 
 - name: Start and enable Docker
   become: true
   systemd:
     name: docker
-    state: started
+    state: "{{ 'restarted' if ignore_running_containers or running_containers.stdout|int == 0 else 'started' }}"
     daemon_reload: yes
     enabled: true
   notify: Notify updates of Docker via Slack

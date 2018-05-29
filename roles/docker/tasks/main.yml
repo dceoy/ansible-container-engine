@@ -22,8 +22,6 @@
 - name: Add the GPG key for Docker in Ubuntu
   when: ansible_distribution == 'Ubuntu'
   become: true
-  environment:
-    https_proxy: "{{ http_proxy if use_proxy else '' }}"
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     id: 0EBFCD88

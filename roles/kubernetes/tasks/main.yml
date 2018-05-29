@@ -15,8 +15,6 @@
 - name: Add the GPG key for Kubernetes in Debian
   when: ansible_os_family == 'Debian'
   become: true
-  environment:
-    https_proxy: "{{ http_proxy if use_proxy else '' }}"
   apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present

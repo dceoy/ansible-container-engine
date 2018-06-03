@@ -133,13 +133,12 @@
     - docker-engine
     - docker.io
 
-- name: Install Docker CE in Fedota
+- name: Install Docker CE in Fedora
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
-    autoremove: yes
     name: docker-ce
-    enablerepo: docker-ce-stable
+    enablerepo: docker-ce-edge
     state: latest
   notify: Notify updates of Docker via Slack
 

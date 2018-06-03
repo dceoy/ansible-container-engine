@@ -1,6 +1,14 @@
 ---
-- name: Add Kubernetes repo in RHEL
-  when: ansible_os_family == 'Redhat'
+- name: Add Kubernetes repo in Fedora
+  when: ansible_distribution == 'Fedora'
+  become: true
+  copy:
+    src: kubernetes.repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Add Kubernetes repo in CentOS
+  when: ansible_distribution == 'CentOS'
   become: true
   yum_repository:
     name: kubernetes
@@ -29,11 +37,10 @@
     filename: kubernetes
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes with apt
+- name: Install Kubernetes with dnf
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
-    autoremove: yes
     name: "{{ item }}"
     state: latest
   with_items:
@@ -41,7 +48,6 @@
     - kubeadm
     - kubectl
     - kubelet
-  ignore_errors: true
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes with yum
@@ -55,7 +61,6 @@
     - kubeadm
     - kubectl
     - flannel
-  ignore_errors: true
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes with apt
@@ -71,7 +76,6 @@
     - kubelet
     - kubeadm
     - kubectl
-  ignore_errors: true
   notify: Notify updates of Kubernetes via Slack
 
 - name: Set /etc/sysctl.d/k8s.conf

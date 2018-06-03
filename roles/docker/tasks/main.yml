@@ -58,6 +58,7 @@
     state: present
   ignore_errors: true
   register: dnf_docker_ce_installed
+  changed_when: false
 
 - name: Uninstall old versions of Docker in Fedora
   when:
@@ -88,6 +89,7 @@
     state: present
   ignore_errors: true
   register: yum_docker_ce_installed
+  changed_when: false
 
 - name: Uninstall old versions of Docker in CentOS
   when:
@@ -117,6 +119,7 @@
     state: present
   ignore_errors: true
   register: apt_docker_ce_installed
+  changed_when: false
 
 - name: Uninstall old versions of Docker in Ubuntu
   when:
@@ -162,6 +165,16 @@
     state: latest
   notify: Notify updates of Docker via Slack
 
+- name: Create /etc/docker/
+  become: true
+  file:
+    path: /etc/docker
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  notify: Notify updates of Docker via Slack
+
 - name: Put /etc/docker/daemon.json
   become: true
   copy:
@@ -169,7 +182,7 @@
     dest: /etc/docker/daemon.json
   notify: Notify updates of Docker via Slack
 
-- name: Create docker.service.d/
+- name: Create /etc/systemd/system/docker.service.d/
   when: use_proxy
   become: true
   file:

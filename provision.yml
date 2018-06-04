@@ -1,7 +1,8 @@
 ---
-- name: Set up development servers with sudo
+- name: Set up container environments
   hosts:
-    - server
+    - cpu
+    - gpu
   vars:
     ignore_running_containers: true
     use_proxy: "{{ http_proxy is defined }}"
@@ -13,4 +14,18 @@
     - role: docker
       when: ansible_os_family in ['RedHat', 'Debian']
     - role: kubernetes
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+- name: Set up container environments with GPU
+  hosts:
+    - gpu
+  vars:
+    ignore_running_containers: true
+    use_proxy: "{{ http_proxy is defined }}"
+  environment:
+    http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
+    https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"
+    no_proxy: "{{ no_proxy if no_proxy is defined else '' }}"
+  roles:
+    - role: nvidia-docker
       when: ansible_os_family in ['RedHat', 'Debian']

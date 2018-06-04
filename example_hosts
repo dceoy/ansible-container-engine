@@ -1,5 +1,8 @@
-[server]
-localhost   ansible_connection=local
+[cpu]
+cpu-server  ansible_connection=ssh
+
+[gpu]
+gpu-server  ansible_connection=ssh
 
 [all:vars]
 slack_channel = ansible

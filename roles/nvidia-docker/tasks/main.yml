@@ -1,0 +1,61 @@
+---
+- name: Add NVIDIA Docker repo in RedHat
+  when:
+    - ansible_architecture == 'x86_64'
+    - ansible_os_family == 'RedHat'
+  become: true
+  get_url:
+    url: "https://nvidia.github.io/nvidia-docker/centos{{ ansible_distribution_major_version if ansible_distribution == 'CentOS' else '7' }}/nvidia-docker.repo"
+    dest: /etc/yum.repos.d/nvidia-docker.repo
+  notify: Notify updates of NVIDIA Docker via Slack
+
+- name: Add the GPG key for NVIDIA Docker in Ubuntu
+  when: ansible_distribution == 'Ubuntu'
+  become: true
+  apt_key:
+    url: https://nvidia.github.io/nvidia-docker/gpgkey
+    state: present
+  notify: Notify updates of NVIDIA Docker via Slack
+
+- name: Add NVIDIA Docker repo in Ubuntu
+  when:
+    - ansible_architecture == 'x86_64'
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  get_url:
+    url: "https://nvidia.github.io/nvidia-docker/{{ ansible_distribution|lower + ansible_distribution_version }}/nvidia-docker.list"
+    dest: /etc/apt/sources.list.d/nvidia-docker.list
+  notify: Notify updates of NVIDIA Docker via Slack
+
+- name: Install NVIDIA Docker in Fedora
+  when: ansible_distribution == 'Fedora'
+  become: true
+  dnf:
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Notify updates of NVIDIA Docker via Slack
+
+- name: Install NVIDIA Docker in CentOS
+  when: ansible_distribution == 'CentOS'
+  become: true
+  yum:
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Notify updates of NVIDIA Docker via Slack
+
+- name: Install NVIDIA Docker in Ubuntu
+  when: ansible_distribution == 'Ubuntu'
+  become: true
+  apt:
+    autoclean: yes
+    autoremove: yes
+    update_cache: yes
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Notify updates of NVIDIA Docker via Slack

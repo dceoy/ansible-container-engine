@@ -32,7 +32,7 @@
   when: ansible_os_family == 'Debian'
   become: true
   apt_repository:
-    repo: "deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-{{ ansible_distribution_release }} main"
+    repo: "deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-xenial main"
     state: present
     filename: kubernetes
   notify: Notify updates of Kubernetes via Slack
@@ -57,10 +57,10 @@
     name: "{{ item }}"
     state: latest
   with_items:
-    - kubelet
+    - flannel
     - kubeadm
     - kubectl
-    - flannel
+    - kubelet
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes with apt
@@ -73,9 +73,10 @@
     name: "{{ item }}"
     state: latest
   with_items:
-    - kubelet
+    - flannel
     - kubeadm
     - kubectl
+    - kubelet
   notify: Notify updates of Kubernetes via Slack
 
 - name: Set /etc/sysctl.d/k8s.conf

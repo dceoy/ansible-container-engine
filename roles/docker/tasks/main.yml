@@ -133,7 +133,10 @@
     name: docker-ce
     enablerepo: docker-ce-edge
     state: latest
-  notify: Notify updates of Docker via Slack
+  notify:
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
 
 - name: Install Docker CE in CentOS
   when: ansible_distribution == 'CentOS'
@@ -142,7 +145,10 @@
     name: docker-ce
     enablerepo: docker-ce-stable
     state: latest
-  notify: Notify updates of Docker via Slack
+  notify:
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
 
 - name: Install Docker CE in Ubuntu
   when: ansible_distribution == 'Ubuntu'
@@ -153,7 +159,10 @@
     update_cache: yes
     name: docker-ce
     state: latest
-  notify: Notify updates of Docker via Slack
+  notify:
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
 
 - name: Create /etc/docker/
   become: true
@@ -163,14 +172,16 @@
     owner: root
     group: root
     mode: 0700
-  notify: Notify updates of Docker via Slack
 
 - name: Put /etc/docker/daemon.json
   become: true
   copy:
-    src: daemon.json
+    src: "{{ 'nvidia_' if use_nvidia_docker else 'default_' }}daemon.json"
     dest: /etc/docker/daemon.json
-  notify: Notify updates of Docker via Slack
+  notify:
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
 
 - name: Create /etc/systemd/system/docker.service.d/
   when: use_proxy
@@ -188,20 +199,103 @@
   template:
     src: option.conf.j2
     dest: /etc/systemd/system/docker.service.d/option.conf
+  notify:
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Add users to %docker
+  when: docker_users is defined
+  become: true
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  with_items: "{{ docker_users }}"
   notify: Notify updates of Docker via Slack
 
-- name: Check running containers
+- name: Add NVIDIA Docker repo in RedHat
+  when:
+    - use_nvidia_docker
+    - ansible_architecture == 'x86_64'
+    - ansible_os_family == 'RedHat'
   become: true
-  shell: |
-    docker container ls -q | wc -l || echo 0
-  register: running_containers
-  changed_when: false
+  get_url:
+    url: "https://nvidia.github.io/nvidia-docker/centos{{ ansible_distribution_major_version if ansible_distribution == 'CentOS' else '7' }}/nvidia-docker.repo"
+    dest: /etc/yum.repos.d/nvidia-docker.repo
+  notify: Notify updates of Docker via Slack
+
+- name: Add the GPG key for NVIDIA Docker in Ubuntu
+  when:
+    - use_nvidia_docker
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  apt_key:
+    url: https://nvidia.github.io/nvidia-docker/gpgkey
+    state: present
+  notify: Notify updates of Docker via Slack
+
+- name: Add NVIDIA Docker repo in Ubuntu
+  when:
+    - use_nvidia_docker
+    - ansible_architecture == 'x86_64'
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  get_url:
+    url: "https://nvidia.github.io/nvidia-docker/{{ ansible_distribution|lower + ansible_distribution_version }}/nvidia-docker.list"
+    dest: /etc/apt/sources.list.d/nvidia-docker.list
+  notify: Notify updates of Docker via Slack
+
+- name: Install NVIDIA Docker in Fedora
+  when:
+    - use_nvidia_docker
+    - ansible_distribution == 'Fedora'
+  become: true
+  dnf:
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Install NVIDIA Docker in CentOS
+  when:
+    - use_nvidia_docker
+    - ansible_distribution == 'CentOS'
+  become: true
+  yum:
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
+
+- name: Install NVIDIA Docker in Ubuntu
+  when:
+    - use_nvidia_docker
+    - ansible_distribution == 'Ubuntu'
+  become: true
+  apt:
+    autoclean: yes
+    autoremove: yes
+    update_cache: yes
+    name: nvidia-docker2
+    state: latest
+  notify:
+    - Reload Docker daemon configurations
+    - Check running containers
+    - Restart Docker
+    - Notify updates of Docker via Slack
 
 - name: Start and enable Docker
   become: true
   systemd:
     name: docker
-    state: "{{ 'restarted' if ignore_running_containers or running_containers.stdout|int == 0 else 'started' }}"
+    state: started
     daemon_reload: yes
     enabled: true
   notify: Notify updates of Docker via Slack
@@ -223,14 +317,4 @@
   group:
     name: docker
     state: present
-  notify: Notify updates of Docker via Slack
-
-- name: Add users to %docker
-  when: docker_users is defined
-  become: true
-  user:
-    name: "{{ item }}"
-    groups: docker
-    append: yes
-  with_items: "{{ docker_users }}"
   notify: Notify updates of Docker via Slack

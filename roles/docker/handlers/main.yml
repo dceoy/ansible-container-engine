@@ -1,4 +1,27 @@
 ---
+- name: Check running containers
+  become: true
+  shell: |
+    docker container ls -q | wc -l || echo 0
+  register: running_containers
+  changed_when: false
+
+- name: Restart Docker
+  when:
+    - running_containers is defined
+    - ignore_running_containers or running_containers.stdout|int == 0
+  become: true
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes
+    enabled: true
+
+- name: Reload Docker daemon configurations
+  become: true
+  shell: |
+    pkill -SIGHUP dockerd
+
 - name: Notify updates of Docker via Slack
   when:
     - slack_token is defined

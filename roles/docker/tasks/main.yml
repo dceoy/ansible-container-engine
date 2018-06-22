@@ -176,13 +176,13 @@
 - name: Set a variable for Docker daemon
   set_fact:
     docker_daemon_vars: |
-      {% set d = {'storage-driver': 'overlay2', 'live-restore': true} %}
+      {% set d = {'storage-driver': 'overlay2'} %}
       {% if docker_data_root is defined %}
-        {% set d = d.__setitem__({'data-root': docker_data_root}) %}
+      {%   set _ = d.update({'data-root': docker_data_root}) %}
       {% endif %}
       {% if use_nvidia_docker %}
-        {% set r = {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}} %}
-        {% set d = d.__setitem__({'runtimes': r}) %}
+      {%   set r = {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}} %}
+      {%   set _ = d.update({'runtimes': r}) %}
       {% endif %}
       {{ d }}
 

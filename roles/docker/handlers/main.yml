@@ -15,7 +15,7 @@
     name: docker
     state: restarted
     daemon_reload: yes
-    enabled: true
+    enabled: yes
 
 - name: Reload Docker daemon configurations
   become: true

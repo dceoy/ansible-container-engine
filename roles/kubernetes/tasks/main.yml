@@ -96,22 +96,146 @@
     name: kubelet
     state: started
     daemon_reload: yes
-    enabled: true
+    enabled: yes
   notify: Notify updates of Kubernetes via Slack
 
-- name: Initilize a Kubernetes master node
+- name: Remove swapfile from /etc/fstab
   when:
-    - kubernetes_master is defined
-    - inventory_hostname == kubernetes_master
-  become: true
-  shell: |
-    /usr/bin/kubeadm init
+    - disable_swap is defined
+    - disable_swap
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+  register: remove_swapfile
+  notify: Notify updates of Kubernetes via Slack
 
-- name: Set up a pod network
+- name: Disable swap
   when:
-    - kubernetes_master is defined
-    - inventory_hostname == kubernetes_master
+    - disable_swap is defined
+    - disable_swap
+    - remove_swapfile is succeeded
+    - ansible_swaptotal_mb > 0
   become: true
   shell: |
-    /usr/bin/kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
+    swapoff -a
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Check /etc/kubernetes/kubelet.conf
+  when:
+    - k8s_master is defined or k8s_nodes is defined
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: stat_k8s_conf
+
+- name: Reset Kubernetes clusters
+  when:
+    - k8s_master is defined or k8s_nodes is defined
+    - reset_k8s is defined
+    - reset_k8s
+    - stat_k8s_conf.stat.exists
+  become: true
+  shell: |
+    /usr/bin/kubeadm reset -f
+  ignore_errors: yes
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Restart kubelet
+  when:
+    - k8s_master is defined or k8s_nodes is defined
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  become: true
+  systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Initilize a k8s master
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  become: true
+  shell: |
+    /usr/bin/kubeadm init --pod-network-cidr=10.244.0.0/16 \
+      | tee /tmp/kubeadam_init.log
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Create ~/.kube/
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Copy ~/.kube/config
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+  become: true
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    owner: "{{ ansible_real_user_id }}"
+    group: "{{ ansible_real_group_id }}"
+    remote_src: yes
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Install a pod network add-on
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  shell: |
+    /usr/bin/kubectl apply \
+      -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Isolate a k8s master
+  when:
+    - isolate_k8s_master is defined
+    - isolate_k8s_master
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  shell: |
     /usr/bin/kubectl taint nodes --all node-role.kubernetes.io/master-
+  notify: Notify updates of Kubernetes via Slack
+
+- name: Extract a join command for nodes
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  become: true
+  shell: |
+    grep -e 'kubeadm join .* --token' /tmp/kubeadam_init.log \
+      | tail -1 > /tmp/kubeadm_join.sh
+  register: kubeadm_join
+
+- name: Fetch a join script
+  when:
+    - k8s_master is defined
+    - inventory_hostname == k8s_master
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  become: true
+  fetch:
+    src: /tmp/kubeadm_join.sh
+    dest: /tmp/
+    flat: yes
+
+- name: Join k8s nodes
+  when:
+    - kubeadm_join is defined
+    - k8s_nodes is defined
+    - inventory_hostname in k8s_nodes
+    - ! stat_k8s_conf.stat.exists or reset_k8s
+  become: true
+  script: /tmp/kubeadm_join.sh
+  args:
+    executable: bash
+  notify: Notify updates of Kubernetes via Slack

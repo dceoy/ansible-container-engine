@@ -1,11 +1,10 @@
 ---
-- name: Set up container environments
+- name: Set up Docker
   hosts:
     - cpu
   vars:
     use_proxy: "{{ http_proxy is defined }}"
     use_nvidia_docker: false
-    ignore_running_containers: false
   environment:
     http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
     https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"
@@ -13,16 +12,13 @@
   roles:
     - role: docker
       when: ansible_os_family in ['RedHat', 'Debian']
-    - role: kubernetes
-      when: ansible_os_family in ['RedHat', 'Debian']
 
-- name: Set up container environments with GPU
+- name: Set up Docker with GPU
   hosts:
     - gpu
   vars:
     use_proxy: "{{ http_proxy is defined }}"
     use_nvidia_docker: true
-    ignore_running_containers: false
   environment:
     http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
     https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"
@@ -30,5 +26,17 @@
   roles:
     - role: docker
       when: ansible_os_family in ['RedHat', 'Debian']
+
+- name: Set up Kubernetes
+  hosts:
+    - cpu
+    - gpu
+  vars:
+    use_proxy: "{{ http_proxy is defined }}"
+  environment:
+    http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
+    https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"
+    no_proxy: "{{ no_proxy if no_proxy is defined else '' }}"
+  roles:
     - role: kubernetes
       when: ansible_os_family in ['RedHat', 'Debian']

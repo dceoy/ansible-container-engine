@@ -1,8 +1,10 @@
 [cpu]
-cpu-server  ansible_connection=ssh
+cpu-server1     ansible_connection=ssh
+cpu-server2     ansible_connection=ssh
 
 [gpu]
-gpu-server  ansible_connection=ssh
+gpu-server1     ansible_connection=ssh
+gpu-server2     ansible_connection=ssh
 
 [all:vars]
 slack_channel = ansible

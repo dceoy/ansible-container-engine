@@ -267,6 +267,7 @@
   dnf:
     name: nvidia-docker2
     state: latest
+  ignore: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers
@@ -281,6 +282,7 @@
   yum:
     name: nvidia-docker2
     state: latest
+  ignore: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers
@@ -298,6 +300,7 @@
     update_cache: yes
     name: nvidia-docker2
     state: latest
+  ignore: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers
@@ -310,7 +313,7 @@
     name: docker
     state: started
     daemon_reload: yes
-    enabled: true
+    enabled: yes
   notify: Notify updates of Docker via Slack
 
 - name: Pull images

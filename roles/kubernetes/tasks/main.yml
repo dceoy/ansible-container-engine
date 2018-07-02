@@ -23,6 +23,8 @@
 - name: Add the GPG key for Kubernetes in Debian
   when: ansible_os_family == 'Debian'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
@@ -31,6 +33,8 @@
 - name: Add Kubernetes repo in Debian
   when: ansible_os_family == 'Debian'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_repository:
     repo: "deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-xenial main"
     state: present
@@ -103,6 +107,7 @@
   when:
     - disable_swap is defined
     - disable_swap
+  become: true
   mount:
     name: swap
     fstype: swap
@@ -136,7 +141,7 @@
     - stat_k8s_conf.stat.exists
   become: true
   shell: |
-    /usr/bin/kubeadm reset -f
+    kubeadm reset -f
   ignore_errors: yes
   notify: Notify updates of Kubernetes via Slack
 
@@ -152,15 +157,22 @@
     enabled: yes
   notify: Notify updates of Kubernetes via Slack
 
+- name: Set variables for kubernetes clusters
+  set_fact:
+    k8s_init_log: 'kubeadm_init.log'
+    k8s_join_sh: 'kubeadm_join.sh'
+
 - name: Initilize a k8s master
   when:
     - k8s_master is defined
     - inventory_hostname == k8s_master
     - ! stat_k8s_conf.stat.exists or reset_k8s
   become: true
+  environment:
+    HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
+    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
-    /usr/bin/kubeadm init --pod-network-cidr=10.244.0.0/16 \
-      | tee /tmp/kubeadam_init.log
+    kubeadm init --pod-network-cidr=10.244.0.0/16 | tee /tmp/{{ k8s_init_log }} && exit ${PIPESTATUS[0]}
   notify: Notify updates of Kubernetes via Slack
 
 - name: Create ~/.kube/
@@ -190,9 +202,11 @@
     - k8s_master is defined
     - inventory_hostname == k8s_master
     - ! stat_k8s_conf.stat.exists or reset_k8s
+  environment:
+    HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
+    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
-    /usr/bin/kubectl apply \
-      -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+    kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
   notify: Notify updates of Kubernetes via Slack
 
 - name: Isolate a k8s master
@@ -202,8 +216,10 @@
     - k8s_master is defined
     - inventory_hostname == k8s_master
     - ! stat_k8s_conf.stat.exists or reset_k8s
+  environment:
+    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
-    /usr/bin/kubectl taint nodes --all node-role.kubernetes.io/master-
+    kubectl taint nodes --all node-role.kubernetes.io/master-
   notify: Notify updates of Kubernetes via Slack
 
 - name: Extract a join command for nodes
@@ -213,8 +229,7 @@
     - ! stat_k8s_conf.stat.exists or reset_k8s
   become: true
   shell: |
-    grep -e 'kubeadm join .* --token' /tmp/kubeadam_init.log \
-      | tail -1 > /tmp/kubeadm_join.sh
+    grep -e 'kubeadm join .* --token' /tmp/{{ k8s_init_log }} | tail -1 > /tmp/{{ k8s_join_sh }}
   register: kubeadm_join
 
 - name: Fetch a join script
@@ -224,7 +239,7 @@
     - ! stat_k8s_conf.stat.exists or reset_k8s
   become: true
   fetch:
-    src: /tmp/kubeadm_join.sh
+    src: "/tmp/{{ k8s_join_sh }}"
     dest: /tmp/
     flat: yes
 
@@ -235,7 +250,7 @@
     - inventory_hostname in k8s_nodes
     - ! stat_k8s_conf.stat.exists or reset_k8s
   become: true
-  script: /tmp/kubeadm_join.sh
+  script: "/tmp/{{ k8s_join_sh }}"
   args:
     executable: bash
   notify: Notify updates of Kubernetes via Slack

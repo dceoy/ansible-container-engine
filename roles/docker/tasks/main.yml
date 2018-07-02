@@ -4,6 +4,8 @@
     - ansible_architecture == 'x86_64'
     - ansible_os_family == 'RedHat'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   get_url:
     url: "https://download.docker.com/linux/{{ ansible_distribution|lower }}/docker-ce.repo"
     dest: /etc/yum.repos.d/docker-ce.repo
@@ -12,6 +14,8 @@
 - name: Add the GPG key for Docker in Ubuntu
   when: ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     id: 0EBFCD88
@@ -23,6 +27,8 @@
     - ansible_architecture == 'x86_64'
     - ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
@@ -34,6 +40,8 @@
     - ansible_architecture in ['armv6l', 'armv7l']
     - ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_repository:
     repo: "deb [arch=armhf] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
@@ -176,13 +184,12 @@
 - name: Set a variable for Docker daemon
   set_fact:
     docker_daemon_vars: |
-      {% set d = {'storage-driver': 'overlay2'} %}
+      {% set d = {'storage-driver': 'overlay2', 'exec-opts': ['native.cgroupdriver=systemd']} %}
       {% if docker_data_root is defined %}
       {%   set _ = d.update({'data-root': docker_data_root}) %}
       {% endif %}
       {% if use_nvidia_docker %}
-      {%   set r = {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}} %}
-      {%   set _ = d.update({'runtimes': r}) %}
+      {%   set _ = d.update({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}) %}
       {% endif %}
       {{ d }}
 
@@ -233,6 +240,8 @@
     - ansible_architecture == 'x86_64'
     - ansible_os_family == 'RedHat'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   get_url:
     url: "https://nvidia.github.io/nvidia-docker/centos{{ ansible_distribution_major_version if ansible_distribution == 'CentOS' else '7' }}/nvidia-docker.repo"
     dest: /etc/yum.repos.d/nvidia-docker.repo
@@ -243,6 +252,8 @@
     - use_nvidia_docker
     - ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_key:
     url: https://nvidia.github.io/nvidia-docker/gpgkey
     state: present
@@ -254,6 +265,8 @@
     - ansible_architecture == 'x86_64'
     - ansible_distribution == 'Ubuntu'
   become: true
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   get_url:
     url: "https://nvidia.github.io/nvidia-docker/{{ ansible_distribution|lower + ansible_distribution_version }}/nvidia-docker.list"
     dest: /etc/apt/sources.list.d/nvidia-docker.list
@@ -267,7 +280,7 @@
   dnf:
     name: nvidia-docker2
     state: latest
-  ignore: true
+  ignore_errors: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers
@@ -282,7 +295,7 @@
   yum:
     name: nvidia-docker2
     state: latest
-  ignore: true
+  ignore_errors: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers
@@ -300,7 +313,7 @@
     update_cache: yes
     name: nvidia-docker2
     state: latest
-  ignore: true
+  ignore_errors: true
   notify:
     - Reload Docker daemon configurations
     - Check running containers

@@ -4,6 +4,8 @@
     - slack_token is defined
     - slack_channel is defined
     - slack_icon_url is defined
+  environment:
+    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   local_action:
     module: slack
     msg: 'The Kubernetes server was updated.'

@@ -170,7 +170,6 @@
   become: true
   environment:
     HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
-    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
     kubeadm init --pod-network-cidr=10.244.0.0/16 | tee /tmp/{{ k8s_init_log }} && exit ${PIPESTATUS[0]}
   notify: Notify updates of Kubernetes via Slack
@@ -204,7 +203,6 @@
     - ! stat_k8s_conf.stat.exists or reset_k8s
   environment:
     HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
-    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
     kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
   notify: Notify updates of Kubernetes via Slack
@@ -216,8 +214,6 @@
     - k8s_master is defined
     - inventory_hostname == k8s_master
     - ! stat_k8s_conf.stat.exists or reset_k8s
-  environment:
-    NO_PROXY: "{{ no_proxy + ',' + ansible_all_ipv4_addresses|join(',') if no_proxy is defined else '' }}"
   shell: |
     kubectl taint nodes --all node-role.kubernetes.io/master-
   notify: Notify updates of Kubernetes via Slack

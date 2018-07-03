@@ -2,13 +2,15 @@
 - name: Check running containers
   become: true
   shell: |
-    docker container ls -q | wc -l || echo 0
+    bash -c 'cat <(docker container ls -q) <(docker container ls -q --filter="name=k8s_")' \
+      | sort | uniq -u | wc -l || echo 0
   register: running_containers
   changed_when: false
 
 - name: Restart Docker
   when:
     - running_containers is defined
+    - ignore_running_containers is defined
     - ignore_running_containers or running_containers.stdout|int == 0
   become: true
   systemd:

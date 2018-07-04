@@ -1,13 +1,13 @@
 ansible-container-engine
 ========================
 
-Ansible playbook for Docker and Kubernetes
+Ansible playbook for Docker, NVIDIA Docker and Kubernetes
 
 Supported distributions:
 
-- Fedora
-- CentOS
-- Ubuntu
+- Fedora (> 28)
+- CentOS (> 7)
+- Ubuntu (> 18.04)
 
 Setup
 -----

@@ -103,6 +103,17 @@
     enabled: yes
   notify: Notify updates of Kubernetes via Slack
 
+- name: Disable firewall
+  when:
+    - disable_firewall is defined
+    - disable_firewall
+  become: true
+  systemd:
+    name: "{{ 'firewalld' if ansible_os_family == 'Debian' else 'ufw' }}"
+    state: stopped
+    enabled: no
+  notify: Notify updates of Kubernetes via Slack
+
 - name: Remove swapfile from /etc/fstab
   when:
     - disable_swap is defined

@@ -5,6 +5,7 @@ ansible_become_pass: sudo_pass
 ignore_running_containers: false
 
 # Kubernetes
+disable_firewall: false
 disable_swap: false
 k8s_master: cpu-server1
 k8s_nodes:

@@ -16,9 +16,9 @@ Setup
 $ git clone https://github.com/dceoy/ansible-container-engine.git
 $ cd ansible-container-engine
 $ cp example_hosts hosts
-$ vim hosts               # => edit
 $ cp example_vars.yml group_vars/all.yml
-$ vim group_vars/all.yml  # => edit
+$ vim hosts                 # => edit
+$ vim group_vars/all.yml    # => edit
 ```
 
 Usage

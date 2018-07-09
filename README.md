@@ -7,6 +7,7 @@ Supported distributions:
 
 - Fedora (> 28)
 - CentOS (> 7)
+- RHEL (> 7)
 - Ubuntu (> 18.04)
 
 Setup
@@ -29,3 +30,5 @@ Provision servers with Docker and Kubernetes
 ```sh
 $ ansible-playbook -i hosts provision.yml
 ```
+
+Disabling SELinux is required in CentOS, RHEL, or Fedora (until SELinux support is improved in the kubelet).

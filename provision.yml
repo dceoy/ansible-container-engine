@@ -25,7 +25,9 @@
     no_proxy: "{{ no_proxy if no_proxy is defined else '' }}"
   roles:
     - role: docker
-      when: ansible_os_family in ['RedHat', 'Debian']
+      when:
+        - ansible_os_family in ['RedHat', 'Debian']
+        - ansible_architecture == 'x86_64'
 
 - name: Set up Kubernetes
   hosts:
@@ -39,4 +41,6 @@
     no_proxy: "{{ no_proxy if no_proxy is defined else '' }}"
   roles:
     - role: kubernetes
-      when: ansible_os_family in ['RedHat', 'Debian']
+      when:
+        - ansible_os_family in ['RedHat', 'Debian']
+        - ansible_architecture == 'x86_64'

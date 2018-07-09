@@ -1,23 +1,10 @@
 ---
 - name: Add Kubernetes repo in Fedora
-  when: ansible_distribution == 'Fedora'
+  when: ansible_os_family == 'RedHat'
   become: true
   copy:
     src: kubernetes.repo
     dest: /etc/yum.repos.d/kubernetes.repo
-  notify: Notify updates of Kubernetes via Slack
-
-- name: Add Kubernetes repo in CentOS
-  when: ansible_distribution == 'CentOS'
-  become: true
-  yum_repository:
-    name: kubernetes
-    description: Kubernetes repo
-    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
-    enabled: yes
-    gpgcheck: yes
-    repo_gpgcheck: yes
-    gpgkey: "https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
   notify: Notify updates of Kubernetes via Slack
 
 - name: Add the GPG key for Kubernetes in Debian
@@ -41,7 +28,7 @@
     filename: kubernetes
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes with dnf
+- name: Install Kubernetes in Fedora
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
@@ -54,8 +41,10 @@
     - kubelet
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes with yum
-  when: ansible_distribution == 'CentOS'
+- name: Install Kubernetes in CentOS or RHEL
+  when:
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution != 'Fedora'
   become: true
   yum:
     name: "{{ item }}"
@@ -67,8 +56,8 @@
     - kubelet
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes with apt
-  when: ansible_distribution == 'Ubuntu'
+- name: Install Kubernetes in Debian
+  when: ansible_os_family == 'Debian'
   become: true
   apt:
     autoclean: yes
@@ -109,7 +98,7 @@
     - disable_firewall
   become: true
   systemd:
-    name: "{{ 'firewalld' if ansible_os_family == 'Debian' else 'ufw' }}"
+    name: "{{ 'ufw' if ansible_os_family == 'Debian' else 'firewalld' }}"
     state: stopped
     enabled: no
   notify: Notify updates of Kubernetes via Slack

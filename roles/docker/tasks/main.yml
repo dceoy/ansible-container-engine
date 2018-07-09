@@ -30,20 +30,7 @@
   environment:
     https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-    filename: docker
-  notify: Notify updates of Docker via Slack
-
-- name: Add Docker repo in Ubuntu with arm
-  when:
-    - ansible_architecture in ['armv6l', 'armv7l']
-    - ansible_distribution == 'Ubuntu'
-  become: true
-  environment:
-    https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
-  apt_repository:
-    repo: "deb [arch=armhf] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'armhf' }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
     filename: docker
   notify: Notify updates of Docker via Slack
@@ -79,8 +66,10 @@
     - docker-engine-selinux
     - docker-engine
 
-- name: Check installed Docker CE in CentOS
-  when: ansible_distribution == 'CentOS'
+- name: Check installed Docker CE in CentOS or RHEL
+  when:
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution != 'Fedora'
   become: true
   yum:
     name: docker-ce
@@ -89,9 +78,10 @@
   register: yum_docker_ce_installed
   changed_when: false
 
-- name: Uninstall old versions of Docker in CentOS
+- name: Uninstall old versions of Docker in CentOS or RHEL
   when:
-    - ansible_distribution == 'CentOS'
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution != 'Fedora'
     - yum_docker_ce_installed is failed
   become: true
   yum:
@@ -146,8 +136,10 @@
     - Restart Docker
     - Notify updates of Docker via Slack
 
-- name: Install Docker CE in CentOS
-  when: ansible_distribution == 'CentOS'
+- name: Install Docker CE in CentOS or RHEL
+  when:
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution != 'Fedora'
   become: true
   yum:
     name: docker-ce
@@ -287,10 +279,11 @@
     - Restart Docker
     - Notify updates of Docker via Slack
 
-- name: Install NVIDIA Docker in CentOS
+- name: Install NVIDIA Docker in CentOS or RHEL
   when:
     - use_nvidia_docker
-    - ansible_distribution == 'CentOS'
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution != 'Fedora'
   become: true
   yum:
     name: nvidia-docker2
@@ -330,9 +323,7 @@
   notify: Notify updates of Docker via Slack
 
 - name: Pull images
-  when:
-    - docker_images is defined
-    - ansible_architecture == 'x86_64'
+  when: docker_images is defined
   become: true
   docker_image:
     name: "{{ item }}"

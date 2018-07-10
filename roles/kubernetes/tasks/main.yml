@@ -148,7 +148,7 @@
 - name: Restart kubelet
   when:
     - k8s_master is defined or k8s_nodes is defined
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   become: true
   systemd:
     name: kubelet
@@ -166,7 +166,7 @@
   when:
     - k8s_master is defined
     - inventory_hostname == k8s_master
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   become: true
   environment:
     HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
@@ -200,7 +200,7 @@
   when:
     - k8s_master is defined
     - inventory_hostname == k8s_master
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   environment:
     HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
   shell: |
@@ -213,7 +213,7 @@
     - isolate_k8s_master
     - k8s_master is defined
     - inventory_hostname == k8s_master
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   shell: |
     kubectl taint nodes --all node-role.kubernetes.io/master-
   notify: Notify updates of Kubernetes via Slack
@@ -222,7 +222,7 @@
   when:
     - k8s_master is defined
     - inventory_hostname == k8s_master
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   become: true
   shell: |
     grep -e 'kubeadm join .* --token' /tmp/{{ k8s_init_log }} | tail -1 > /tmp/{{ k8s_join_sh }}
@@ -232,7 +232,7 @@
   when:
     - k8s_master is defined
     - inventory_hostname == k8s_master
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   become: true
   fetch:
     src: "/tmp/{{ k8s_join_sh }}"
@@ -244,7 +244,7 @@
     - kubeadm_join is defined
     - k8s_nodes is defined
     - inventory_hostname in k8s_nodes
-    - ! stat_k8s_conf.stat.exists or reset_k8s
+    - reset_k8s or stat_k8s_conf.stat.exists == false
   become: true
   script: "/tmp/{{ k8s_join_sh }}"
   args:

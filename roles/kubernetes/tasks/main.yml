@@ -159,8 +159,9 @@
 
 - name: Set variables for kubernetes clusters
   set_fact:
-    k8s_init_log: 'kubeadm_init.log'
-    k8s_join_sh: 'kubeadm_join.sh'
+    k8s_init_log: kubeadm_init.log
+    k8s_join_sh: kubeadm_join.sh
+    k8s_pod_network: 10.244.0.0/16
 
 - name: Initilize a k8s master
   when:
@@ -171,7 +172,8 @@
   environment:
     HTTPS_PROXY: "{{ http_proxy if http_proxy is defined else '' }}"
   shell: |
-    kubeadm init --pod-network-cidr=10.244.0.0/16 | tee /tmp/{{ k8s_init_log }} && exit ${PIPESTATUS[0]}
+    kubeadm init --pod-network-cidr={{ k8s_pod_network }} 2>&1 \
+      | tee /tmp/{{ k8s_init_log }} && exit ${PIPESTATUS[0]}
   notify: Notify updates of Kubernetes via Slack
 
 - name: Create ~/.kube/

@@ -32,13 +32,12 @@
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
-    name: "{{ item }}"
+    name:
+      - flannel
+      - kubeadm
+      - kubectl
+      - kubelet
     state: latest
-  with_items:
-    - flannel
-    - kubeadm
-    - kubectl
-    - kubelet
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes in CentOS or RHEL
@@ -47,13 +46,12 @@
     - ansible_distribution != 'Fedora'
   become: true
   yum:
-    name: "{{ item }}"
+    name:
+      - flannel
+      - kubeadm
+      - kubectl
+      - kubelet
     state: latest
-  with_items:
-    - flannel
-    - kubeadm
-    - kubectl
-    - kubelet
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes in Debian
@@ -63,13 +61,12 @@
     autoclean: yes
     autoremove: yes
     update_cache: yes
-    name: "{{ item }}"
+    name:
+      - flannel
+      - kubeadm
+      - kubectl
+      - kubelet
     state: latest
-  with_items:
-    - flannel
-    - kubeadm
-    - kubectl
-    - kubelet
   notify: Notify updates of Kubernetes via Slack
 
 - name: Set /etc/sysctl.d/k8s.conf

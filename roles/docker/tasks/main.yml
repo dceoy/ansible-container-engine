@@ -52,19 +52,18 @@
   become: true
   dnf:
     autoremove: yes
-    name: "{{ item }}"
+    name:
+      - docker
+      - docker-client
+      - docker-client-latest
+      - docker-common
+      - docker-latest
+      - docker-latest-logrotate
+      - docker-logrotate
+      - docker-selinux
+      - docker-engine-selinux
+      - docker-engine
     state: absent
-  with_items:
-    - docker
-    - docker-client
-    - docker-client-latest
-    - docker-common
-    - docker-latest
-    - docker-latest-logrotate
-    - docker-logrotate
-    - docker-selinux
-    - docker-engine-selinux
-    - docker-engine
 
 - name: Check installed Docker CE in CentOS or RHEL
   when:
@@ -85,19 +84,18 @@
     - yum_docker_ce_installed is failed
   become: true
   yum:
-    name: "{{ item }}"
+    name:
+      - docker
+      - docker-client
+      - docker-client-latest
+      - docker-common
+      - docker-latest
+      - docker-latest-logrotate
+      - docker-logrotate
+      - docker-selinux
+      - docker-engine-selinux
+      - docker-engine
     state: absent
-  with_items:
-    - docker
-    - docker-client
-    - docker-client-latest
-    - docker-common
-    - docker-latest
-    - docker-latest-logrotate
-    - docker-logrotate
-    - docker-selinux
-    - docker-engine-selinux
-    - docker-engine
 
 - name: Check installed Docker CE in Ubuntu
   when: ansible_distribution == 'Ubuntu'
@@ -117,12 +115,11 @@
   apt:
     autoclean: yes
     autoremove: yes
-    name: "{{ item }}"
+    name:
+      - docker
+      - docker-engine
+      - docker.io
     state: absent
-  with_items:
-    - docker
-    - docker-engine
-    - docker.io
 
 - name: Install Docker CE in Fedora
   when: ansible_distribution == 'Fedora'

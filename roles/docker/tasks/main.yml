@@ -177,6 +177,9 @@
       {% if docker_data_root is defined %}
       {%   set _ = d.update({'data-root': docker_data_root}) %}
       {% endif %}
+      {% if docker_userns_remap is defined %}
+      {%   set _ = d.update({'userns-remap': docker_userns_remap}) %}
+      {% endif %}
       {% if use_nvidia_docker %}
       {%   set _ = d.update({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}) %}
       {% endif %}

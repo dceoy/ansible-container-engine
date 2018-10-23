@@ -170,6 +170,18 @@
     group: root
     mode: 0700
 
+- name: Set user.max_user_namespaces
+  when:
+    - docker_userns_remap is defined
+    - ansible_os_family == 'RedHat'
+  become: true
+  sysctl:
+    name: user.max_user_namespaces
+    value: 15000
+    sysctl_set: yes
+    state: present
+    reload: yes
+
 - name: Set a variable for Docker daemon
   set_fact:
     docker_daemon_vars: |

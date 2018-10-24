@@ -169,6 +169,7 @@
     owner: root
     group: root
     mode: 0700
+  notify: Notify updates of Docker via Slack
 
 - name: Set user.max_user_namespaces
   when:
@@ -181,6 +182,22 @@
     sysctl_set: yes
     state: present
     reload: yes
+    sysctl_file: /etc/sysctl.d/docker.conf
+  notify: Notify updates of Docker via Slack
+
+- name: Set net.ipv4.ip_forward
+  when:
+    - docker_userns_remap is defined
+    - ansible_os_family == 'RedHat'
+  become: true
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+    sysctl_file: /etc/sysctl.d/docker.conf
+  notify: Notify updates of Docker via Slack
 
 - name: Set a variable for Docker daemon
   set_fact:
@@ -190,7 +207,7 @@
       {%   set _ = d.update({'data-root': docker_data_root}) %}
       {% endif %}
       {% if docker_userns_remap is defined %}
-      {%   set _ = d.update({'userns-remap': docker_userns_remap}) %}
+      {%   set _ = d.update({'userns-remap': docker_userns_remap, 'ip-forward': true, 'ip': '0.0.0.0'}) %}
       {% endif %}
       {% if use_nvidia_docker %}
       {%   set _ = d.update({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}) %}

@@ -84,6 +84,8 @@
   notify: Notify updates of Kubernetes via Slack
 
 - name: Start and enable kubelet
+  when:
+    - k8s_master is defined or k8s_nodes is defined
   become: true
   systemd:
     name: kubelet

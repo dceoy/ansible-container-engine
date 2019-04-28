@@ -39,7 +39,10 @@
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: present
   ignore_errors: true
   register: dnf_docker_ce_installed
@@ -71,7 +74,10 @@
     - ansible_distribution != 'Fedora'
   become: true
   yum:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: present
   ignore_errors: true
   register: yum_docker_ce_installed
@@ -101,7 +107,10 @@
   when: ansible_distribution == 'Ubuntu'
   become: true
   apt:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: present
   ignore_errors: true
   register: apt_docker_ce_installed
@@ -125,7 +134,10 @@
   when: ansible_distribution == 'Fedora'
   become: true
   dnf:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     enablerepo: docker-ce-edge
     state: latest
   notify:
@@ -139,7 +151,10 @@
     - ansible_distribution != 'Fedora'
   become: true
   yum:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     enablerepo: docker-ce-stable
     state: latest
   notify:
@@ -154,7 +169,10 @@
     autoclean: yes
     autoremove: yes
     update_cache: yes
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: latest
   notify:
     - Check running containers

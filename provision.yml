@@ -3,7 +3,6 @@
   hosts:
     - cpu
   vars:
-    use_proxy: "{{ http_proxy is defined }}"
     use_nvidia_docker: false
   environment:
     http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
@@ -17,7 +16,6 @@
   hosts:
     - gpu
   vars:
-    use_proxy: "{{ http_proxy is defined }}"
     use_nvidia_docker: true
   environment:
     http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
@@ -33,8 +31,6 @@
   hosts:
     - cpu
     - gpu
-  vars:
-    use_proxy: "{{ http_proxy is defined }}"
   environment:
     http_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
     https_proxy: "{{ https_proxy if https_proxy is defined else '' }}"

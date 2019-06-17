@@ -11,7 +11,7 @@
   when:
     - running_containers is defined
     - ignore_running_containers is defined
-    - ignore_running_containers or running_containers.stdout|int == 0
+    - ignore_running_containers|bool or running_containers.stdout|int == 0
   become: true
   systemd:
     name: docker

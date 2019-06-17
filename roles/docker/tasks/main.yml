@@ -227,7 +227,7 @@
       {% if docker_userns_remap is defined %}
       {%   set _ = d.update({'userns-remap': docker_userns_remap, 'ip-forward': true, 'ip': '0.0.0.0'}) %}
       {% endif %}
-      {% if use_nvidia_docker %}
+      {% if use_nvidia_docker|bool %}
       {%   set _ = d.update({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}) %}
       {% endif %}
       {{ d }}
@@ -243,7 +243,7 @@
     - Notify updates of Docker via Slack
 
 - name: Create /etc/systemd/system/docker.service.d/
-  when: use_proxy
+  when: http_proxy is defined or https_proxy is defined
   become: true
   file:
     path: /etc/systemd/system/docker.service.d
@@ -253,7 +253,7 @@
     mode: 0755
 
 - name: Put /etc/systemd/system/docker.service.d/option.conf
-  when: use_proxy
+  when: http_proxy is defined or https_proxy is defined
   become: true
   template:
     src: option.conf.j2
@@ -275,7 +275,7 @@
 
 - name: Add NVIDIA Docker repo in RedHat
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_architecture == 'x86_64'
     - ansible_os_family == 'RedHat'
   become: true
@@ -288,7 +288,7 @@
 
 - name: Add the GPG key for NVIDIA Docker in Ubuntu
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_distribution == 'Ubuntu'
   become: true
   environment:
@@ -300,7 +300,7 @@
 
 - name: Add NVIDIA Docker repo in Ubuntu
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_architecture == 'x86_64'
     - ansible_distribution == 'Ubuntu'
   become: true
@@ -313,7 +313,7 @@
 
 - name: Install NVIDIA Docker in Fedora
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_distribution == 'Fedora'
   become: true
   dnf:
@@ -328,7 +328,7 @@
 
 - name: Install NVIDIA Docker in CentOS or RHEL
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_os_family == 'RedHat'
     - ansible_distribution != 'Fedora'
   become: true
@@ -344,7 +344,7 @@
 
 - name: Install NVIDIA Docker in Ubuntu
   when:
-    - use_nvidia_docker
+    - use_nvidia_docker|bool
     - ansible_distribution == 'Ubuntu'
   become: true
   apt:

@@ -196,7 +196,7 @@
   become: true
   sysctl:
     name: user.max_user_namespaces
-    value: 15000
+    value: '15000'
     sysctl_set: yes
     state: present
     reload: yes
@@ -210,7 +210,7 @@
   become: true
   sysctl:
     name: net.ipv4.ip_forward
-    value: 1
+    value: '1'
     sysctl_set: yes
     state: present
     reload: yes
@@ -317,8 +317,12 @@
     - ansible_distribution == 'Fedora'
   become: true
   dnf:
-    name: nvidia-docker2
+    name: nvidia-container-toolkit
     state: latest
+    enablerepo:
+      - nvidia-docker
+      - nvidia-container-runtime
+      - libnvidia-container
   ignore_errors: true
   notify:
     - Reload Docker daemon configurations
@@ -333,8 +337,12 @@
     - ansible_distribution != 'Fedora'
   become: true
   yum:
-    name: nvidia-docker2
+    name: nvidia-container-toolkit
     state: latest
+    enablerepo:
+      - nvidia-docker
+      - nvidia-container-runtime
+      - libnvidia-container
   ignore_errors: true
   notify:
     - Reload Docker daemon configurations
@@ -351,7 +359,7 @@
     autoclean: yes
     autoremove: yes
     update_cache: yes
-    name: nvidia-docker2
+    name: nvidia-container-toolkit
     state: latest
   ignore_errors: true
   notify:

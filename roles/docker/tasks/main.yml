@@ -192,7 +192,6 @@
 - name: Set user.max_user_namespaces
   when:
     - docker_userns_remap is defined
-    - ansible_os_family == 'RedHat'
   become: true
   sysctl:
     name: user.max_user_namespaces
@@ -206,7 +205,6 @@
 - name: Set net.ipv4.ip_forward
   when:
     - docker_userns_remap is defined
-    - ansible_os_family == 'RedHat'
   become: true
   sysctl:
     name: net.ipv4.ip_forward

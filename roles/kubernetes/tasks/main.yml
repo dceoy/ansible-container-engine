@@ -8,7 +8,8 @@
   notify: Notify updates of Kubernetes via Slack
 
 - name: Add the GPG key for Kubernetes in Debian
-  when: ansible_os_family == 'Debian'
+  when:
+    - ansible_os_family == 'Debian'
   become: true
   environment:
     https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
@@ -18,7 +19,8 @@
   notify: Notify updates of Kubernetes via Slack
 
 - name: Add Kubernetes repo in Debian
-  when: ansible_os_family == 'Debian'
+  when:
+    - ansible_os_family == 'Debian'
   become: true
   environment:
     https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
@@ -29,7 +31,8 @@
   notify: Notify updates of Kubernetes via Slack
 
 - name: Install Kubernetes in Fedora
-  when: ansible_distribution == 'Fedora'
+  when:
+    - ansible_os_family == 'RedHat'
   become: true
   dnf:
     name:
@@ -40,22 +43,9 @@
     state: latest
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes in CentOS or RHEL
-  when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution != 'Fedora'
-  become: true
-  yum:
-    name:
-      - flannel
-      - kubeadm
-      - kubectl
-      - kubelet
-    state: latest
-  notify: Notify updates of Kubernetes via Slack
-
 - name: Install Kubernetes in Debian
-  when: ansible_os_family == 'Debian'
+  when:
+    - ansible_os_family == 'Debian'
   become: true
   apt:
     autoclean: yes

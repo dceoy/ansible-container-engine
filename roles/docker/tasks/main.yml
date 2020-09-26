@@ -35,8 +35,10 @@
     filename: docker
   notify: Notify updates of Docker via Slack
 
-- name: Check installed Docker CE in Fedora
-  when: ansible_distribution == 'Fedora'
+- name: Check installed Docker CE in RHEL
+  when:
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution_major_version|int >= 8
   become: true
   dnf:
     name:
@@ -48,9 +50,10 @@
   register: dnf_docker_ce_installed
   changed_when: false
 
-- name: Uninstall old versions of Docker in Fedora
+- name: Uninstall old versions of Docker in RHEL
   when:
-    - ansible_distribution == 'Fedora'
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution_major_version|int >= 8
     - dnf_docker_ce_installed is failed
   become: true
   dnf:
@@ -68,10 +71,10 @@
       - docker-engine
     state: absent
 
-- name: Check installed Docker CE in CentOS or RHEL
+- name: Check installed Docker CE in CentOS7
   when:
     - ansible_os_family == 'RedHat'
-    - ansible_distribution != 'Fedora'
+    - ansible_distribution_major_version|int < 8
   become: true
   yum:
     name:
@@ -83,10 +86,10 @@
   register: yum_docker_ce_installed
   changed_when: false
 
-- name: Uninstall old versions of Docker in CentOS or RHEL
+- name: Uninstall old versions of Docker in CentOS7
   when:
     - ansible_os_family == 'RedHat'
-    - ansible_distribution != 'Fedora'
+    - ansible_distribution_major_version|int < 8
     - yum_docker_ce_installed is failed
   become: true
   yum:
@@ -130,8 +133,10 @@
       - docker.io
     state: absent
 
-- name: Install Docker CE in Fedora
-  when: ansible_distribution == 'Fedora'
+- name: Install Docker CE in RHEL
+  when:
+    - ansible_os_family == 'RedHat'
+    - ansible_distribution_major_version|int >= 8
   become: true
   dnf:
     name:
@@ -145,10 +150,10 @@
     - Restart Docker
     - Notify updates of Docker via Slack
 
-- name: Install Docker CE in CentOS or RHEL
+- name: Install Docker CE in CentOS7
   when:
     - ansible_os_family == 'RedHat'
-    - ansible_distribution != 'Fedora'
+    - ansible_distribution_major_version|int < 8
   become: true
   yum:
     name:
@@ -280,7 +285,7 @@
   environment:
     https_proxy: "{{ http_proxy if http_proxy is defined else '' }}"
   get_url:
-    url: "https://nvidia.github.io/nvidia-docker/centos{{ ansible_distribution_major_version if ansible_distribution == 'CentOS' else '7' }}/nvidia-docker.repo"
+    url: "https://nvidia.github.io/nvidia-docker/centos{{ ansible_distribution_major_version if ansible_distribution == 'CentOS' else '8' }}/nvidia-docker.repo"
     dest: /etc/yum.repos.d/nvidia-docker.repo
   notify: Notify updates of Docker via Slack
 
@@ -309,10 +314,10 @@
     dest: /etc/apt/sources.list.d/nvidia-docker.list
   notify: Notify updates of Docker via Slack
 
-- name: Install NVIDIA Docker in Fedora
+- name: Install NVIDIA Docker in RHEL
   when:
     - use_nvidia_docker|bool
-    - ansible_distribution == 'Fedora'
+    - ansible_os_family == 'RedHat'
   become: true
   dnf:
     name: nvidia-container-toolkit
@@ -328,11 +333,11 @@
     - Restart Docker
     - Notify updates of Docker via Slack
 
-- name: Install NVIDIA Docker in CentOS or RHEL
+- name: Install NVIDIA Docker in CentOS7
   when:
     - use_nvidia_docker|bool
     - ansible_os_family == 'RedHat'
-    - ansible_distribution != 'Fedora'
+    - ansible_distribution_major_version|int < 8
   become: true
   yum:
     name: nvidia-container-toolkit

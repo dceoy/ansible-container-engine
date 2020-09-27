@@ -59,6 +59,7 @@
   dnf:
     autoremove: yes
     name:
+      - runc
       - docker
       - docker-client
       - docker-client-latest

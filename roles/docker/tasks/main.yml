@@ -144,7 +144,7 @@
       - docker-ce
       - docker-ce-cli
       - containerd.io
-    enablerepo: docker-ce-edge
+    enablerepo: docker-ce-stable
     state: latest
   notify:
     - Check running containers

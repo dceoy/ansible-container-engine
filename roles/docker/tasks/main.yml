@@ -35,10 +35,20 @@
     filename: docker
   notify: Notify updates of Docker via Slack
 
-- name: Check installed Docker CE in RHEL
+- name: Install packages for CentOS <8
   when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int >= 8
+    - ansible_distribution == 'CentOS'
+    - ansible_distribution_major_version|int < 8
+  become: true
+  yum:
+    update_cache: yes
+    name:
+      - dnf
+    state: latest
+  notify: Notify updates of Docker via Slack
+
+- name: Check installed Docker CE in RHEL
+  when: ansible_os_family == 'RedHat'
   become: true
   dnf:
     name:
@@ -53,47 +63,10 @@
 - name: Uninstall old versions of Docker in RHEL
   when:
     - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int >= 8
     - dnf_docker_ce_installed is failed
   become: true
   dnf:
     autoremove: yes
-    name:
-      - runc
-      - docker
-      - docker-client
-      - docker-client-latest
-      - docker-common
-      - docker-latest
-      - docker-latest-logrotate
-      - docker-logrotate
-      - docker-selinux
-      - docker-engine-selinux
-      - docker-engine
-    state: absent
-
-- name: Check installed Docker CE in CentOS7
-  when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int < 8
-  become: true
-  yum:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-    state: present
-  ignore_errors: true
-  register: yum_docker_ce_installed
-  changed_when: false
-
-- name: Uninstall old versions of Docker in CentOS7
-  when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int < 8
-    - yum_docker_ce_installed is failed
-  become: true
-  yum:
     name:
       - docker
       - docker-client
@@ -135,28 +108,9 @@
     state: absent
 
 - name: Install Docker CE in RHEL
-  when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int >= 8
+  when: ansible_os_family == 'RedHat'
   become: true
   dnf:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-    enablerepo: docker-ce-stable
-    state: latest
-  notify:
-    - Check running containers
-    - Restart Docker
-    - Notify updates of Docker via Slack
-
-- name: Install Docker CE in CentOS7
-  when:
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int < 8
-  become: true
-  yum:
     name:
       - docker-ce
       - docker-ce-cli
@@ -317,30 +271,10 @@
 
 - name: Install NVIDIA Docker in RHEL
   when:
-    - use_nvidia_docker|bool
     - ansible_os_family == 'RedHat'
+    - use_nvidia_docker|bool
   become: true
   dnf:
-    name: nvidia-container-toolkit
-    state: latest
-    enablerepo:
-      - nvidia-docker
-      - nvidia-container-runtime
-      - libnvidia-container
-  ignore_errors: true
-  notify:
-    - Reload Docker daemon configurations
-    - Check running containers
-    - Restart Docker
-    - Notify updates of Docker via Slack
-
-- name: Install NVIDIA Docker in CentOS7
-  when:
-    - use_nvidia_docker|bool
-    - ansible_os_family == 'RedHat'
-    - ansible_distribution_major_version|int < 8
-  become: true
-  yum:
     name: nvidia-container-toolkit
     state: latest
     enablerepo:

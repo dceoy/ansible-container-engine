@@ -1,5 +1,5 @@
 ---
-- name: Add Kubernetes repo in Fedora
+- name: Add Kubernetes repo in RHEL
   when: ansible_os_family == 'RedHat'
   become: true
   copy:
@@ -30,9 +30,8 @@
     filename: kubernetes
   notify: Notify updates of Kubernetes via Slack
 
-- name: Install Kubernetes in Fedora
-  when:
-    - ansible_os_family == 'RedHat'
+- name: Install Kubernetes in RHEL
+  when: ansible_os_family == 'RedHat'
   become: true
   dnf:
     name:
